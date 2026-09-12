@@ -1,6 +1,6 @@
+import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union
 
 from graph import Connection, Graph, Zone
 
@@ -29,7 +29,7 @@ class Parser:
         self.connections: list[Connection] = []
         self.start: Zone | None = None
         self.end: Zone | None = None
-        self.seen_connections: set[tuple[str, str]] = set()
+        self.seen_connections: set[tuple[str, ...]] = set()
         self.nb_drones_seen = False
         self.connections_started = False
 
@@ -139,21 +139,21 @@ class Parser:
             )
 
         if key == "start_hub":
-            name, x, y = name_coordinates_lst
+            name, x_raw, y_raw = name_coordinates_lst
             self.start_count += 1
             if self.start_count > 1:
                 raise ParseError(
                     f"Line {line_num}: Multiple start_hub definitions found"
                 )
         elif key == "end_hub":
-            name, x, y = name_coordinates_lst
+            name, x_raw, y_raw = name_coordinates_lst
             self.end_count += 1
             if self.end_count > 1:
                 raise ParseError(
                     f"Line {line_num}: Multiple end_hub definitions found"
                 )
         elif key == "hub":
-            name, x, y = name_coordinates_lst
+            name, x_raw, y_raw = name_coordinates_lst
         else:
             raise ParseError(f"Line {line_num}: Invalid Key: {key}")
 
@@ -161,8 +161,8 @@ class Parser:
             raise ParseError(
                 f"Line {line_num}: Zone name can't have '-' or spaces"
             )
-        x_val = self.is_int(x, line_num)
-        y_val = self.is_int(y, line_num)
+        x = self.is_int(x_raw, line_num)
+        y = self.is_int(y_raw, line_num)
 
         meta = (
             self.parse_metadata(metadata_str, line_num, is_zone=True)
@@ -171,11 +171,12 @@ class Parser:
         )
         color = meta.color if meta.color is not None else "none"
         zone_type = meta.type if meta.type is not None else "normal"
-        max_drones: Union[int, float]
-        max_drones = meta.max_drones if meta.max_drones is not None else 1
+        max_drones: int = (
+            meta.max_drones if meta.max_drones is not None else 1
+        )
         if key == "start_hub":
             self.start = Zone(
-                name, x_val, y_val, color, zone_type, max_drones=float("inf")
+                name, x, y, color, zone_type, max_drones=sys.maxsize
             )
             if name not in self.zones:
                 self.zones[name] = self.start
@@ -185,7 +186,7 @@ class Parser:
                 )
         elif key == "end_hub":
             self.end = Zone(
-                name, x_val, y_val, color, zone_type, max_drones=float("inf")
+                name, x, y, color, zone_type, max_drones=sys.maxsize
             )
             if name not in self.zones:
                 self.zones[name] = self.end
@@ -196,7 +197,7 @@ class Parser:
         elif key == "hub":
             if name not in self.zones:
                 self.zones[name] = Zone(
-                    name, x_val, y_val, color, zone_type, max_drones
+                    name, x, y, color, zone_type, max_drones
                 )
             else:
                 raise ParseError(
@@ -226,7 +227,7 @@ class Parser:
                 f"Line {line_num}: Self-connection is forbidden: {name1}"
             )
 
-        edge: tuple[str, str] = (min(name1, name2), max(name1, name2))
+        edge = tuple(sorted([name1, name2]))
         if edge in self.seen_connections:
             raise ParseError(
                 f"Line {line_num}: Duplicate connection between "
