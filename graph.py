@@ -18,11 +18,8 @@ class Zone:
         self.max_drones = max_drones
         self.current_drones: list[int] = []
 
-    def __str__(self) -> str:
-        return f"Zone({self.name}, {self._type})"
-
     def __repr__(self) -> str:
-        return self.__str__()
+        return f"Zone({self.name}, {self._type})"
 
 
 class Connection:
@@ -43,14 +40,11 @@ class Connection:
         """Return the other end of the connection."""
         return self.zone_b if zone == self.zone_a else self.zone_a
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return (
             f"Connection({self.zone_a.name}-{self.zone_b.name}, "
             f"cap={self.max_link_capacity})"
         )
-
-    def __repr__(self) -> str:
-        return self.__str__()
 
 
 class Graph:
@@ -61,15 +55,17 @@ class Graph:
         start: Zone,
         end: Zone,
         zones: dict[str, Zone],
-        connections: list[Connection],
+        connections_lst: list[Connection],
     ) -> None:
         self.start = start
         self.end = end
         self.zones = zones
-        self.connections = connections
-        # Adjacency list: zone_name -> list of connections
+        self.connections_lst = connections_lst
         self.adj: dict[str, list[Connection]] = {name: [] for name in self.zones}
-        for conn in self.connections:
+
+        # loop through connections take both a/b names as dict keys
+        # append related connections to a list of connections for that zone(dict value)
+        for conn in self.connections_lst:
             self.adj[conn.zone_a.name].append(conn)
             self.adj[conn.zone_b.name].append(conn)
 

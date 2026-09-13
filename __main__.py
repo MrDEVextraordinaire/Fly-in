@@ -1,5 +1,5 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from parser import ParseError, Parser
 
@@ -15,15 +15,15 @@ def main() -> None:
         graph, nb_drones = Parser().parse_map(map_path)
         print(
             f"Graph loaded successfully: {len(graph.zones)} zones, "
-            f"{len(graph.connections)} connections, {nb_drones} drones"
+            f"{len(graph.connections_lst)} connections, {nb_drones} drones"
         )
-        print(graph.zones.items())
     except ParseError as e:
         sys.stderr.write(f"Parse error: {e}\n")
         sys.exit(1)
     except FileNotFoundError:
         sys.stderr.write(f"Error: File not found: {map_path}\n")
         sys.exit(1)
+    graph.get_neighbors(graph.zones["loop_a"])
 
 
 if __name__ == "__main__":
