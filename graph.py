@@ -61,14 +61,60 @@ class Graph:
         self.end = end
         self.zones = zones
         self.connections_lst = connections_lst
-        self.adj: dict[str, list[Connection]] = {name: [] for name in self.zones}
+        self.adj: dict[str, list[Connection]] = {
+            name: [] for name in self.zones
+        }
 
         # loop through connections take both a/b names as dict keys
-        # append related connections to a list of connections for that zone(dict value)
+        # append connection to list of connections for that zone (dict value)
         for conn in self.connections_lst:
             self.adj[conn.zone_a.name].append(conn)
             self.adj[conn.zone_b.name].append(conn)
 
     def get_neighbors(self, zone: Zone) -> list[tuple[Zone, Connection]]:
         """Return (neighbor_zone, connection) pairs for a given zone."""
-        return [(conn.other(zone), conn) for conn in self.adj.get(zone.name, [])]
+        return [
+            (conn.other(zone), conn)
+            for conn in self.adj.get(zone.name, [])
+        ]
+
+    def pathfinder(self, save_path: bool) -> bool | list[Zone]:
+        """Check for valid path from start to end; return path if True."""
+        if self.start._type == "blocked" or self.end._type == "blocked":
+            return [] if save_path else False
+
+        visited: set[str] = {self.start.name}
+        queue = [self.start]
+        parent: dict[str, str | None] = (
+            {self.start.name: None} if save_path else {}
+        )
+
+        def rebuild_path(
+            parent: dict[str, str | None], start: str, end: str
+        ) -> list[Zone]:
+            """Rebuild path from start to end using parent dictionary."""
+            path = []
+            current: str | None = end
+            while current is not None:
+                path.append(self.zones[current])
+                current = parent[current]
+            return path[::-1]  # Reverse path to get it from start to end
+
+        while queue:
+            current_zone = queue.pop(0)
+            if current_zone == self.end:
+                return (
+                    rebuild_path(parent, self.start.name, self.end.name)
+                    if save_path
+                    else True
+                )
+            for neighbor, _ in self.get_neighbors(current_zone):
+                if (
+                    neighbor.name not in visited
+                    and neighbor._type != "blocked"
+                ):
+                    visited.add(neighbor.name)
+                    queue.append(neighbor)
+                    if save_path:
+                        parent[neighbor.name] = current_zone.name
+        return [] if save_path else False

@@ -23,7 +23,6 @@ def main() -> None:
     except FileNotFoundError:
         sys.stderr.write(f"Error: File not found: {map_path}\n")
         sys.exit(1)
-    graph.get_neighbors(graph.zones["loop_a"])
 
 
 if __name__ == "__main__":
