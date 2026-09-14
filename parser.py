@@ -55,7 +55,7 @@ class Parser:
     ) -> Metadata:
         metadata_keys = ("zone", "color", "max_drones")
 
-        if not (metadata[0] == "[" and metadata[-1] == "]"):
+        if not (metadata.startswith("[") and metadata.endswith("]")):
             raise ParseError(f"Line {line_num}: Metadata must be in brackets")
 
         color = zone_type = max_drones = max_cap = None
@@ -262,7 +262,7 @@ class Parser:
             graph = Graph(
                 self.start, self.end, self.zones, self.connections_lst, self.nb_drones
             )
-            if not graph.pathfinder(save_path=False):
+            if not graph.pathfinder():
                 raise ParseError(
                     "Error: Disconnected graph (no valid path from "
                     "start_hub to end_hub)"

@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 
 from parser import ParseError, Parser
-
 from simulation import Simulation
 
 
