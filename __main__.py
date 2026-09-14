@@ -3,6 +3,8 @@ from pathlib import Path
 
 from parser import ParseError, Parser
 
+from simulation import Simulation
+
 
 def main() -> None:
     if len(sys.argv) != 2:
@@ -12,10 +14,10 @@ def main() -> None:
     map_path = Path(sys.argv[1])
 
     try:
-        graph, nb_drones = Parser().parse_map(map_path)
+        graph = Parser().parse_map(map_path)
         print(
             f"Graph loaded successfully: {len(graph.zones)} zones, "
-            f"{len(graph.connections_lst)} connections, {nb_drones} drones"
+            f"{len(graph.connections_lst)} connections, {graph.nb_drones} drones"
         )
     except ParseError as e:
         sys.stderr.write(f"Parse error: {e}\n")
@@ -23,6 +25,9 @@ def main() -> None:
     except FileNotFoundError:
         sys.stderr.write(f"Error: File not found: {map_path}\n")
         sys.exit(1)
+
+    sim = Simulation(graph)
+    sim.run()
 
 
 if __name__ == "__main__":

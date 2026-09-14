@@ -56,14 +56,14 @@ class Graph:
         end: Zone,
         zones: dict[str, Zone],
         connections_lst: list[Connection],
+        nb_drones: int,
     ) -> None:
         self.start = start
         self.end = end
+        self.nb_drones = nb_drones
         self.zones = zones
         self.connections_lst = connections_lst
-        self.adj: dict[str, list[Connection]] = {
-            name: [] for name in self.zones
-        }
+        self.adj: dict[str, list[Connection]] = {name: [] for name in self.zones}
 
         # loop through connections take both a/b names as dict keys
         # append connection to list of connections for that zone (dict value)
@@ -73,10 +73,7 @@ class Graph:
 
     def get_neighbors(self, zone: Zone) -> list[tuple[Zone, Connection]]:
         """Return (neighbor_zone, connection) pairs for a given zone."""
-        return [
-            (conn.other(zone), conn)
-            for conn in self.adj.get(zone.name, [])
-        ]
+        return [(conn.other(zone), conn) for conn in self.adj.get(zone.name, [])]
 
     def pathfinder(self, save_path: bool) -> bool | list[Zone]:
         """Check for valid path from start to end; return path if True."""
@@ -85,9 +82,7 @@ class Graph:
 
         visited: set[str] = {self.start.name}
         queue = [self.start]
-        parent: dict[str, str | None] = (
-            {self.start.name: None} if save_path else {}
-        )
+        parent: dict[str, str | None] = {self.start.name: None} if save_path else {}
 
         def rebuild_path(
             parent: dict[str, str | None], start: str, end: str
@@ -109,12 +104,39 @@ class Graph:
                     else True
                 )
             for neighbor, _ in self.get_neighbors(current_zone):
-                if (
-                    neighbor.name not in visited
-                    and neighbor._type != "blocked"
-                ):
+                if neighbor.name not in visited and neighbor._type != "blocked":
                     visited.add(neighbor.name)
                     queue.append(neighbor)
                     if save_path:
                         parent[neighbor.name] = current_zone.name
         return [] if save_path else False
+
+
+class Drone:
+    """Represents a drone in the network."""
+
+    def __init__(self, drone_id: int, path: list[Zone]) -> None:
+        self.drone_id = drone_id
+        self.path: list[Zone] = path
+        self.steps_taken = 0
+
+    def __repr__(self) -> str:
+        return f"Drone({self.drone_id}, at {self.current_zone.name})"
+
+    # dynamic property/attribue, read-only, protects data synchronization.
+    @property
+    def current_zone(self) -> Zone:
+        """Return the current zone of the drone."""
+        return self.path[self.steps_taken]
+
+    @property
+    def next_zone(self) -> Zone | None:
+        """Return the next zone in the path, if available."""
+        if self.steps_taken + 1 < len(self.path):
+            return self.path[self.steps_taken + 1]
+        return None
+
+    @property
+    def has_arrived(self) -> bool:
+        """Check if the drone has reached its destination."""
+        return self.steps_taken >= len(self.path) - 1
