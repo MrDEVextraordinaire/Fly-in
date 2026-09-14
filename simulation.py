@@ -31,7 +31,6 @@ class Simulation:
                 conn.current_drones.clear()
 
             active_drones = [drone for drone in drones if not drone.has_arrived]
-            active_drones.sort(key=lambda d: d.steps_taken, reverse=True)
 
             for drone in active_drones:
                 next_zone = drone.next_zone
