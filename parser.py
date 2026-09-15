@@ -33,11 +33,15 @@ class Parser:
         self.nb_drones_seen = False
         self.connections_started = False
 
-    def is_pos_int(self, value: str, line_num: int, field_name: str = "value") -> int:
+    def is_pos_int(
+        self, value: str, line_num: int, field_name: str = "value"
+    ) -> int:
         try:
             int_value = int(value)
         except ValueError:
-            raise ParseError(f"Line {line_num}: {field_name} must be an integer")
+            raise ParseError(
+                f"Line {line_num}: {field_name} must be an integer"
+            )
         if int_value <= 0:
             raise ParseError(
                 f"Line {line_num}: {field_name} must be a positive integer"
@@ -76,7 +80,9 @@ class Parser:
                 )
 
             if key in seen_keys:
-                raise ParseError(f"Line {line_num}: Duplicate metadata key: {key}")
+                raise ParseError(
+                    f"Line {line_num}: Duplicate metadata key: {key}"
+                )
             seen_keys.add(key)
 
             if is_zone and key not in metadata_keys:
@@ -85,7 +91,8 @@ class Parser:
                 )
             elif not is_zone and key not in connection_keys:
                 raise ParseError(
-                    f"Line {line_num}: Invalid metadata key for connection: {key}"
+                    f"Line {line_num}: "
+                    f"Invalid metadata key for connection: {key}"
                 )
             if key == "color":
                 all_alpha = all(letter.isalpha() for letter in custom)
@@ -96,12 +103,16 @@ class Parser:
                 color = custom
             elif key == "zone":
                 if custom not in zone_types:
-                    raise ParseError(f"Line {line_num}: Invalid zone type '{custom}'")
+                    raise ParseError(
+                        f"Line {line_num}: Invalid zone type '{custom}'"
+                    )
                 zone_type = custom
             elif key == "max_drones":
                 max_drones = self.is_pos_int(custom, line_num, "max_drones")
             elif key == "max_link_capacity":
-                max_cap = self.is_pos_int(custom, line_num, "max_link_capacity")
+                max_cap = self.is_pos_int(
+                    custom, line_num, "max_link_capacity"
+                )
 
         return Metadata(
             color=color, type=zone_type, max_drones=max_drones, max_cap=max_cap
@@ -111,7 +122,9 @@ class Parser:
         metadata_str = ""
         if "[" in value:
             if not value.strip().endswith("]"):
-                raise ParseError(f"Line {line_num}: Metadata must be in brackets")
+                raise ParseError(
+                    f"Line {line_num}: Metadata must be in brackets"
+                )
             name_coordinates, metadata_str = value.split("[", 1)
             metadata_str = "[" + metadata_str
         else:
@@ -134,14 +147,18 @@ class Parser:
             name, x_raw, y_raw = name_coordinates_lst
             self.end_count += 1
             if self.end_count > 1:
-                raise ParseError(f"Line {line_num}: Multiple end_hub definitions found")
+                raise ParseError(
+                    f"Line {line_num}: Multiple end_hub definitions found"
+                )
         elif key == "hub":
             name, x_raw, y_raw = name_coordinates_lst
         else:
             raise ParseError(f"Line {line_num}: Invalid Key: {key}")
 
         if "-" in name or " " in name:
-            raise ParseError(f"Line {line_num}: Zone name can't have '-' or spaces")
+            raise ParseError(
+                f"Line {line_num}: Zone name can't have '-' or spaces"
+            )
         x = self.is_int(x_raw, line_num)
         y = self.is_int(y_raw, line_num)
 
@@ -154,28 +171,42 @@ class Parser:
         zone_type = meta.type if meta.type is not None else "normal"
         max_drones: int = meta.max_drones if meta.max_drones is not None else 1
         if key == "start_hub":
-            self.start = Zone(name, x, y, color, zone_type, max_drones=sys.maxsize)
+            self.start = Zone(
+                name, x, y, color, zone_type, max_drones=sys.maxsize
+            )
             if name not in self.zones:
                 self.zones[name] = self.start
             else:
-                raise ParseError(f"Line {line_num}: Zone name '{name}' already exists")
+                raise ParseError(
+                    f"Line {line_num}: Zone name '{name}' already exists"
+                )
         elif key == "end_hub":
-            self.end = Zone(name, x, y, color, zone_type, max_drones=sys.maxsize)
+            self.end = Zone(
+                name, x, y, color, zone_type, max_drones=sys.maxsize
+            )
             if name not in self.zones:
                 self.zones[name] = self.end
             else:
-                raise ParseError(f"Line {line_num}: Zone name '{name}' already exists")
+                raise ParseError(
+                    f"Line {line_num}: Zone name '{name}' already exists"
+                )
         elif key == "hub":
             if name not in self.zones:
-                self.zones[name] = Zone(name, x, y, color, zone_type, max_drones)
+                self.zones[name] = Zone(
+                    name, x, y, color, zone_type, max_drones
+                )
             else:
-                raise ParseError(f"Line {line_num}: Zone name '{name}' already exists")
+                raise ParseError(
+                    f"Line {line_num}: Zone name '{name}' already exists"
+                )
 
     def parse_connection(self, value: str, line_num: int) -> None:
         metadata_str = ""
         if "[" in value:
             if not value.strip().endswith("]"):
-                raise ParseError(f"Line {line_num}: Metadata must be in brackets")
+                raise ParseError(
+                    f"Line {line_num}: Metadata must be in brackets"
+                )
             names, metadata_str = value.split("[", 1)
             metadata_str = "[" + metadata_str
         else:
@@ -183,15 +214,20 @@ class Parser:
 
         names = names.strip()
         if "-" not in names or names.count("-") != 1:
-            raise ParseError(f"Line {line_num}: Invalid connection format: {names}")
+            raise ParseError(
+                f"Line {line_num}: Invalid connection format: {names}"
+            )
         name1, name2 = names.split("-")
         if name1 == name2:
-            raise ParseError(f"Line {line_num}: Self-connection is forbidden: {name1}")
+            raise ParseError(
+                f"Line {line_num}: Self-connection is forbidden: {name1}"
+            )
 
         new_conn = tuple(sorted([name1, name2]))
         if new_conn in self.seen_connections:
             raise ParseError(
-                f"Line {line_num}: Duplicate connection between {name1} and {name2}"
+                f"Line {line_num}: Duplicate connection "
+                f"between {name1} and {name2}"
             )
         self.seen_connections.add(new_conn)
 
@@ -235,7 +271,8 @@ class Parser:
                 elif stripped_key in ("start_hub", "end_hub", "hub"):
                     if not self.nb_drones_seen:
                         raise ParseError(
-                            f"Line {line_num}: nb_drones must be defined before hubs"
+                            f"Line {line_num}: "
+                            "nb_drones must be defined before hubs"
                         )
                     if self.connections_started:
                         raise ParseError(
@@ -253,14 +290,21 @@ class Parser:
                     self.parse_connection(stripped_val, line_num)
                 else:
                     raise ParseError(
-                        f"Line {line_num}: Unknown configuration key '{stripped_key}'"
+                        f"Line {line_num}: "
+                        f"Unknown configuration key '{stripped_key}'"
                     )
 
             if self.start is None or self.end is None:
-                raise ParseError("Error: Both start_hub and end_hub must be defined")
+                raise ParseError(
+                    "Error: Both start_hub and end_hub must be defined"
+                )
 
             graph = Graph(
-                self.start, self.end, self.zones, self.connections_lst, self.nb_drones
+                self.start,
+                self.end,
+                self.zones,
+                self.connections_lst,
+                self.nb_drones,
             )
             if not graph.pathfinder():
                 raise ParseError(

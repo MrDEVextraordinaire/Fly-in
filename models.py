@@ -67,17 +67,20 @@ class Graph:
         self.nb_drones = nb_drones
         self.zones = zones
         self.connections_lst = connections_lst
-        self.adj: dict[str, list[Connection]] = {name: [] for name in self.zones}
+        self.adj: dict[str, list[Connection]] = {
+            name: [] for name in self.zones
+        }
 
-        # loop through connections take both a/b names as dict keys
-        # append connection to list of connections for that zone (dict value)
         for conn in self.connections_lst:
             self.adj[conn.zone_a.name].append(conn)
             self.adj[conn.zone_b.name].append(conn)
 
     def get_neighbors(self, zone: Zone) -> list[tuple[Zone, Connection]]:
         """Return (neighbor_zone, connection) pairs for a given zone."""
-        return [(conn.other(zone), conn) for conn in self.adj.get(zone.name, [])]
+        return [
+            (conn.other(zone), conn)
+            for conn in self.adj.get(zone.name, [])
+        ]
 
     def pathfinder(self, weighted: bool = False) -> list[Zone]:
         """Check for valid path from start to end; return path if found."""
@@ -114,15 +117,23 @@ class Graph:
                 current_cost, current_name = heapq.heappop(p_queued_zones)
 
                 if current_name == self.end.name:
-                    return rebuild_path(parents_dict, self.start.name, self.end.name)
-                if current_cost > total_dist_to_zone.get(current_name, float("inf")):
+                    return rebuild_path(
+                        parents_dict, self.start.name, self.end.name
+                    )
+                if current_cost > total_dist_to_zone.get(
+                    current_name, float("inf")
+                ):
                     continue
                 zone_object = self.zones[current_name]
                 for neighbor_candidate, _ in self.get_neighbors(zone_object):
                     if neighbor_candidate._type == "blocked":
                         continue
-                    potential_move_cost = move_cost.get(neighbor_candidate._type, 1.0)
-                    bias = -0.1 if neighbor_candidate._type == "priority" else 0.0
+                    potential_move_cost = move_cost.get(
+                        neighbor_candidate._type, 1.0
+                    )
+                    bias = (
+                        -0.1 if neighbor_candidate._type == "priority" else 0.0
+                    )
                     potential_move_cost += bias
                     potential_total_dist = current_cost + potential_move_cost
                     if potential_total_dist < total_dist_to_zone.get(
@@ -141,9 +152,14 @@ class Graph:
         while queue:
             current_zone = queue.pop(0)
             if current_zone == self.end:
-                return rebuild_path(parents_dict, self.start.name, self.end.name)
+                return rebuild_path(
+                    parents_dict, self.start.name, self.end.name
+                )
             for neighbor, _ in self.get_neighbors(current_zone):
-                if neighbor.name not in visited and neighbor._type != "blocked":
+                if (
+                    neighbor.name not in visited
+                    and neighbor._type != "blocked"
+                ):
                     visited.add(neighbor.name)
                     queue.append(neighbor)
                     parents_dict[neighbor.name] = current_zone.name
@@ -157,11 +173,11 @@ class Drone:
         self.drone_id = drone_id
         self.path: list[Zone] = path
         self.steps_taken = 0
+        self.travelling: Connection | None = None
 
     def __repr__(self) -> str:
         return f"Drone({self.drone_id}, at {self.current_zone.name})"
 
-    # dynamic property/attribue, read-only, protects data synchronization.
     @property
     def current_zone(self) -> Zone:
         """Return the current zone of the drone."""
@@ -186,23 +202,23 @@ class Visualizer:
     RESET = "\033[0m"
 
     COLORS: ClassVar[dict[str, str]] = {
-        "red": "\033[91m",
-        "crimson": "\033[31m",
-        "darkred": "\033[31m",
-        "maroon": "\033[31m",
-        "green": "\033[92m",
-        "lime": "\033[92m",
-        "blue": "\033[94m",
-        "cyan": "\033[96m",
-        "yellow": "\033[93m",
-        "gold": "\033[93m",
-        "orange": "\033[33m",
-        "brown": "\033[33m",
-        "purple": "\033[35m",
-        "magenta": "\033[95m",
-        "violet": "\033[35m",
-        "gray": "\033[90m",
-        "black": "\033[30m",
+        "red": "\033[38;5;196m",
+        "crimson": "\033[38;5;161m",
+        "darkred": "\033[38;5;88m",
+        "maroon": "\033[38;5;52m",
+        "green": "\033[38;5;46m",
+        "lime": "\033[38;5;118m",
+        "blue": "\033[38;5;27m",
+        "cyan": "\033[38;5;51m",
+        "yellow": "\033[38;5;226m",
+        "gold": "\033[38;5;220m",
+        "orange": "\033[38;5;208m",
+        "brown": "\033[38;5;130m",
+        "purple": "\033[38;5;129m",
+        "magenta": "\033[38;5;201m",
+        "violet": "\033[38;5;141m",
+        "gray": "\033[38;5;244m",
+        "black": "\033[38;5;16m",
     }
 
     def colorize(self, text: str, color_name: str) -> str:
